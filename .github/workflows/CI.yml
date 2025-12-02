@@ -1,38 +1,38 @@
 name: CI
 
+permissions: {}
+
 on:
   push:
     branches:
       - master
+      - main
   pull_request:
+  workflow_dispatch:
+
+env:
+  FOUNDRY_PROFILE: ci
 
 jobs:
-  test:
-    strategy:
-      matrix:
-        node: ['10.x', '12.x']
-        os: [ubuntu-latest]
-
-    runs-on: ${{ matrix.os }}
-
+  check:
+    name: Foundry project
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
         with:
-          node-version: ${{ matrix.node }}
+          persist-credentials: false
+          submodules: recursive
 
-      - run: npm install -g yarn
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
 
-      - id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - uses: actions/cache@v1
-        with:
-          path: ${{ steps.yarn-cache.outputs.dir }}
-          key: ${{ matrix.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ matrix.os }}-yarn-
+      - name: Show Forge version
+        run: forge --version
 
-      - run: yarn
+      - name: Run Forge build
+        run: forge build --sizes
 
-      - run: yarn lint
-      - run: yarn test
+      - name: Run Forge tests
+        run: forge test -vvv
