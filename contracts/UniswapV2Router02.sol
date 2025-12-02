@@ -214,8 +214,8 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0,) = UniswapV2Library.sortTokens(input, output);
             uint amountOut = amounts[i + 1];
-            (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
-            address to = i < path.length - 2 ? UniswapV2Library.pairFor(factory, output, path[i + 2]) : _to;
+            (uint amount0Out, uint amount1Out) = UniswapV2Library.conditionalSwapUint(input == token0, amountOut, uint(0));
+            address to = UniswapV2Library.conditionalSelectAddress(i < path.length - 2, UniswapV2Library.pairFor(factory, output, path[i + 2]), _to);
             IUniswapV2Pair(UniswapV2Library.pairFor(factory, input, output)).swap(
                 amount0Out, amount1Out, to, new bytes(0)
             );
