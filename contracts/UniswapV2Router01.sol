@@ -172,7 +172,17 @@ contract UniswapV2Router01 is IUniswapV2Router01 {
             (address token0,) = UniswapV2Library.sortTokens(input, output);
             uint amountOut = amounts[i + 1];
             (uint amount0Out, uint amount1Out) = UniswapV2Library.conditionalSwapUint(input == token0, amountOut, uint(0));
-            address to = UniswapV2Library.conditionalSelectAddress(i < path.length - 2, UniswapV2Library.pairFor(factory, output, path[i + 2]), _to);
+
+            address nextToken;
+            assembly {
+                let len := mload(path)
+                let cond := lt(i, sub(len, 2)) 
+                let offset := mul(mul(add(i, 2), 32), cond)
+                nextToken := mload(add(add(path, 32), offset))
+            }
+
+            address potentialNextPair = UniswapV2Library.pairFor(factory, output, nextToken);
+            address to = UniswapV2Library.conditionalSelectAddress(i < path.length - 2, potentialNextPair, _to);
             IUniswapV2Pair(UniswapV2Library.pairFor(factory, input, output)).swap(amount0Out, amount1Out, to, new bytes(0));
         }
     }
